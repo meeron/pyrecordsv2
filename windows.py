@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMessageBox, QMainWindow, QAction, QDialog,
-    QGridLayout, QLabel, QLineEdit, QPushButton)
+    QGridLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout)
 from PyQt5.QtGui import QIcon
 from time import sleep
 
@@ -72,7 +72,6 @@ class MainW(QMainWindow):
     def _openDbFile(self):
         opendbw = OpenDbW(self)
         r = opendbw.exec()
-        print(r)
 
     def showEvent(self, event):
         if not self._wasShown:
@@ -83,7 +82,7 @@ class MainW(QMainWindow):
 class OpenDbW(BaseW):
     def __init__(self, mainW):
         super(OpenDbW, self).__init__(mainW)
-        self._init("Open db file...", 450, 200)
+        self._init("Open db file...", 450, 0)
         self._createWidgets()
         self._createLayout()
 
@@ -95,21 +94,32 @@ class OpenDbW(BaseW):
         
         self._openFileBtn = QPushButton("...")
 
-        #TODO: add buttons to dialog within QHBoxLayoyt within QVBoxLayout
-        #self._okBtn = QPushButton("OK")
-        #self._cancelBtn = QPushButton("Cancel")
+        self._openBtn = QPushButton("Open")
+        self._cancelBtn = QPushButton("Cancel")
+        self._cancelBtn.clicked.connect(self._cancelBtn_click)
 
     def _createLayout(self):
-        #TODO: add grid within QVBoxLayout
-        grid = QGridLayout()
-        #grid.setSpacing(10)
-
-        grid.addWidget(QLabel("Database file"), 0, 0)
-        grid.addWidget(self._dbFile, 0, 1)
-        grid.addWidget(self._openFileBtn, 0, 2)
-
-        grid.addWidget(QLabel("Password"), 1, 0)
-        grid.addWidget(self._dbPass, 1, 1)        
-
-        self.setLayout(grid)
+        gridLayout = QGridLayout()
+        gridLayout.setSpacing(10)
         
+        mainLayout = QVBoxLayout()
+        mainLayout.addStretch(1)
+        
+        buttonsLayout = QHBoxLayout()       
+
+        gridLayout.addWidget(QLabel("Database file"), 0, 0)
+        gridLayout.addWidget(self._dbFile, 0, 1)
+        gridLayout.addWidget(self._openFileBtn, 0, 2)
+        gridLayout.addWidget(QLabel("Password"), 1, 0)
+        gridLayout.addWidget(self._dbPass, 1, 1)
+
+        buttonsLayout.addWidget(self._cancelBtn)
+        buttonsLayout.addWidget(self._openBtn)
+
+        mainLayout.addLayout(gridLayout)
+        mainLayout.addLayout(buttonsLayout)
+
+        self.setLayout(mainLayout)
+        
+    def _cancelBtn_click(self):
+        self.close()
