@@ -1,8 +1,10 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (QWidget, QDesktopWidget, QMessageBox, QMainWindow, QAction, QDialog,
-    QGridLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout)
+    QGridLayout, QLabel, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QMessageBox,
+    QMessageBox)
 from PyQt5.QtGui import QIcon
 from time import sleep
+from models import Storage, OpenDbStaus
 
 class BaseW(QDialog):
     def __init__(self, parent=None):
@@ -27,6 +29,7 @@ class MainW(QMainWindow):
         super(MainW, self).__init__()  
         self._init(app, "PyRecords", 800, 500)
         self._wasShown = False
+        #self._storage = Storage()
 
     def _init(self, app, title, w, h, posX=0, posY=0):        
         self._app = app
@@ -72,6 +75,9 @@ class MainW(QMainWindow):
     def _openDbFile(self):
         opendbw = OpenDbW(self)
         r = opendbw.exec()
+        if r == QDialog.Accepted:
+            #TODO: read data from dialog
+            print("Db OK")
 
     def showEvent(self, event):
         if not self._wasShown:
@@ -87,7 +93,7 @@ class OpenDbW(BaseW):
         self._createLayout()
 
     def _createWidgets(self):
-        self._dbFile = QLineEdit()
+        self._dbFileLnEd = QLineEdit()
 
         self._dbPass = QLineEdit()
         self._dbPass.setEchoMode(QLineEdit.Password) 
@@ -95,6 +101,7 @@ class OpenDbW(BaseW):
         self._openFileBtn = QPushButton("...")
 
         self._openBtn = QPushButton("Open")
+        self._openBtn.clicked.connect(self._openBtn_click)
         self._cancelBtn = QPushButton("Cancel")
         self._cancelBtn.clicked.connect(self._cancelBtn_click)
 
@@ -108,7 +115,7 @@ class OpenDbW(BaseW):
         buttonsLayout = QHBoxLayout()       
 
         gridLayout.addWidget(QLabel("Database file"), 0, 0)
-        gridLayout.addWidget(self._dbFile, 0, 1)
+        gridLayout.addWidget(self._dbFileLnEd, 0, 1)
         gridLayout.addWidget(self._openFileBtn, 0, 2)
         gridLayout.addWidget(QLabel("Password"), 1, 0)
         gridLayout.addWidget(self._dbPass, 1, 1)
@@ -122,4 +129,23 @@ class OpenDbW(BaseW):
         self.setLayout(mainLayout)
         
     def _cancelBtn_click(self):
-        self.close()
+        self.reject()
+
+    def _openBtn_click(self):
+        msg = None
+        path = self._dbFileLnEd.text()
+        pw = self._dbPass.text()
+        if path and pw:
+            storage = Storage(path, pw)
+            status = storage.open()
+
+            if status == OpenDbStaus.success:
+                #TODO: save last successfuly opened file in users home directory
+                self.accept()
+            if status == OpenDbStaus.not_found:
+                msg = "File '{0}' not found.".format(path)
+            if status == OpenDbStaus.invalid_password:
+                msg = "Password for '{0}' is invalid.".format(path)
+
+            if msg:
+                QMessageBox.warning(self, "Warning...", msg)
